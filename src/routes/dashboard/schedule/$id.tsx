@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getCurrentUser } from "~/lib/auth";
+import { getDocuments, uploadDocument, deleteDocument } from "~/lib/documents";
+import type { DocumentRow } from "~/lib/documents";
 import { sql } from "~/db";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface SigningDetail {
   id: string;
@@ -122,6 +124,24 @@ function formatDateTime(iso: string | null): string {
   });
 }
 
+function formatDate(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function toDatetimeLocal(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -142,6 +162,14 @@ function statusBadge(status: string) {
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );
+}
+
+function isImageType(mimeType: string): boolean {
+  return mimeType.startsWith("image/");
+}
+
+function isPdfType(mimeType: string): boolean {
+  return mimeType === "application/pdf";
 }
 
 export const Route = createFileRoute("/dashboard/schedule/$id")({
@@ -170,6 +198,100 @@ function SigningDetailPage() {
   const [editNotes, setEditNotes] = useState(signing?.notes ?? "");
   const [editError, setEditError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Document state
+  const [documents, setDocuments] = useState<DocumentRow[]>([]);
+  const [docsLoading, setDocsLoading] = useState(true);
+  const [uploadError, setUploadError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<DocumentRow | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load documents on mount
+  useEffect(() => {
+    loadDocuments();
+  }, [id]);
+
+  const loadDocuments = async () => {
+    try {
+      const docs = await getDocuments({ data: { signingId: id } });
+      setDocuments(docs);
+    } catch {
+      // Silently fail — user may not have auth
+    } finally {
+      setDocsLoading(false);
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate size: max 10MB
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setUploadError("File is too large. Maximum size is 10MB.");
+      return;
+    }
+
+    setUploadError("");
+    setUploading(true);
+
+    try {
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Strip the data:...;base64, prefix
+          const commaIdx = result.indexOf(",");
+          resolve(commaIdx >= 0 ? result.slice(commaIdx + 1) : result);
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+      });
+
+      reader.readAsDataURL(file);
+      const base64Data = await base64Promise;
+
+      await uploadDocument({
+        data: {
+          signingId: id,
+          filename: file.name,
+          mimeType: file.type || "application/octet-stream",
+          base64Data,
+        },
+      });
+
+      // Refresh list
+      await loadDocuments();
+
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteDoc = async (docId: string) => {
+    if (!window.confirm("Delete this document?")) return;
+
+    try {
+      await deleteDocument({ data: { docId } });
+      setDocuments((prev) => prev.filter((d) => d.id !== docId));
+      if (previewDoc?.id === docId) {
+        setPreviewDoc(null);
+      }
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Delete failed.");
+    }
+  };
+
+  const handlePreview = (doc: DocumentRow) => {
+    setPreviewDoc(doc);
+  };
 
   if (!signing) {
     return (
@@ -469,6 +591,128 @@ function SigningDetailPage() {
               >
                 {actionLoading === "delete" ? "Deleting..." : "Delete"}
               </button>
+            )}
+          </div>
+
+          {/* ── Documents Section ── */}
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-gray-900">Documents</h2>
+
+            {/* Upload */}
+            <div className="mt-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <label className="block text-sm font-medium text-gray-700">
+                Upload a document for this signing
+              </label>
+              <div className="mt-2 flex items-center gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  onChange={handleFileSelect}
+                  disabled={uploading}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 disabled:opacity-50"
+                />
+              </div>
+              {uploading && (
+                <p className="mt-2 text-sm text-indigo-600">Uploading...</p>
+              )}
+              {uploadError && (
+                <p className="mt-2 text-sm text-red-600">{uploadError}</p>
+              )}
+              <p className="mt-2 text-xs text-gray-400">
+                PDF, DOC, DOCX, JPG, or PNG up to 10MB
+              </p>
+            </div>
+
+            {/* Document list */}
+            <div className="mt-4">
+              {docsLoading ? (
+                <p className="text-sm text-gray-400">Loading documents...</p>
+              ) : documents.length === 0 ? (
+                <p className="text-sm text-gray-400">No documents uploaded yet.</p>
+              ) : (
+                <ul className="divide-y divide-gray-200 rounded-xl border border-gray-200 bg-white shadow-sm">
+                  {documents.map((doc) => (
+                    <li
+                      key={doc.id}
+                      className="flex items-center justify-between px-5 py-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => handlePreview(doc)}
+                          className="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline truncate block max-w-xs"
+                        >
+                          {doc.filename}
+                        </button>
+                        <p className="text-xs text-gray-400">
+                          {formatFileSize(doc.size_bytes)} &middot;{" "}
+                          {formatDate(doc.uploaded_at)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDoc(doc.id)}
+                        className="ml-3 shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                      >
+                        Delete
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Preview panel */}
+            {previewDoc && (
+              <div className="mt-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    Preview: {previewDoc.filename}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDoc(null)}
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                {isImageType(previewDoc.mime_type) ? (
+                  <img
+                    src={`data:${previewDoc.mime_type};base64,${previewDoc.data}`}
+                    alt={previewDoc.filename}
+                    className="max-h-96 rounded-lg border border-gray-200 object-contain"
+                  />
+                ) : isPdfType(previewDoc.mime_type) ? (
+                  <div>
+                    <iframe
+                      src={`data:application/pdf;base64,${previewDoc.data}`}
+                      title={previewDoc.filename}
+                      className="h-96 w-full rounded-lg border border-gray-200"
+                    />
+                    <a
+                      href={`data:application/pdf;base64,${previewDoc.data}`}
+                      download={previewDoc.filename}
+                      className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-800"
+                    >
+                      Download PDF
+                    </a>
+                  </div>
+                ) : (
+                  <a
+                    href={`data:${previewDoc.mime_type};base64,${previewDoc.data}`}
+                    download={previewDoc.filename}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Download {previewDoc.filename}
+                  </a>
+                )}
+              </div>
             )}
           </div>
         </>

@@ -64,3 +64,14 @@ CREATE TABLE IF NOT EXISTS invoices (
   paid_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Documents uploaded for signings
+CREATE TABLE IF NOT EXISTS documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  signing_id UUID NOT NULL REFERENCES signings(id) ON DELETE CASCADE,
+  filename TEXT NOT NULL,
+  mime_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+  size_bytes INTEGER NOT NULL DEFAULT 0,
+  data TEXT NOT NULL,
+  uploaded_at TIMESTAMPTZ DEFAULT now()
+);
