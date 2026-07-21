@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getCurrentUser } from "~/lib/auth";
 import { getDocuments, uploadDocument, deleteDocument } from "~/lib/documents";
+import { toggleSharing, getSharingStatus } from "~/lib/sharing";
 import type { DocumentRow } from "~/lib/documents";
 import { sql } from "~/db";
 import { useState, useRef, useEffect } from "react";
@@ -206,10 +207,27 @@ function SigningDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<DocumentRow | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Sharing state
+  const [sharingEnabled, setSharingEnabled] = useState(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [sharingLoading, setSharingLoading] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState(false);
+
+  // Load sharing status
+  const loadSharingStatus = async () => {
+    try {
+      const status = await getSharingStatus({ data: { signingId: id } });
+      setSharingEnabled(status.sharing_enabled);
+      setShareToken(status.share_token);
+    } catch {
+      // Silently fail
+    }
+  };
 
   // Load documents on mount
   useEffect(() => {
     loadDocuments();
+    loadSharingStatus();
   }, [id]);
 
   const loadDocuments = async () => {
@@ -286,6 +304,39 @@ function SigningDetailPage() {
       }
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Delete failed.");
+    }
+  };
+
+  const handleToggleSharing = async () => {
+    setSharingLoading(true);
+    try {
+      const result = await toggleSharing({ data: { signingId: id } });
+      setSharingEnabled(result.sharing_enabled);
+      setShareToken(result.share_token);
+    } catch {
+      // Silently fail
+    } finally {
+      setSharingLoading(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (shareToken) {
+      const link = `https://site-13hs94uef-lyssa.vercel.app/s/${shareToken}`;
+      navigator.clipboard.writeText(link).then(() => {
+        setCopyFeedback(true);
+        setTimeout(() => setCopyFeedback(false), 2000);
+      }).catch(() => {
+        // Fallback
+        const textArea = document.createElement("textarea");
+        textArea.value = link;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        setCopyFeedback(true);
+        setTimeout(() => setCopyFeedback(false), 2000);
+      });
     }
   };
 
@@ -714,6 +765,62 @@ function SigningDetailPage() {
                 )}
               </div>
             )}
+          </div>
+          {/* Share with Client */}
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-gray-900">Share with Client</h2>
+            <div className="mt-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {sharingEnabled ? "Sharing enabled" : "Sharing disabled"}
+                  </p>
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    {sharingEnabled
+                      ? "Your client can view signing details via the link below."
+                      : "Toggle to generate a shareable link for your client."}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleSharing}
+                  disabled={sharingLoading}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${
+                    sharingEnabled ? "bg-indigo-600" : "bg-gray-200"
+                  } ${sharingLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                  role="switch"
+                  aria-checked={sharingEnabled}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      sharingEnabled ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+              {sharingEnabled && shareToken && (
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                    Shareable link
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={`https://site-13hs94uef-lyssa.vercel.app/s/${shareToken}`}
+                      className="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
+                    >
+                      {copyFeedback ? "Copied!" : "Copy link"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}

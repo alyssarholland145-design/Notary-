@@ -35,8 +35,14 @@ CREATE TABLE IF NOT EXISTS signings (
   completed_at TIMESTAMPTZ,
   status TEXT DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'cancelled')),
   notes TEXT,
+  share_token TEXT UNIQUE,
+  sharing_enabled BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Add sharing columns to existing signings table (idempotent)
+ALTER TABLE signings ADD COLUMN IF NOT EXISTS share_token TEXT UNIQUE;
+ALTER TABLE signings ADD COLUMN IF NOT EXISTS sharing_enabled BOOLEAN DEFAULT false;
 
 -- Notary journal entries
 CREATE TABLE IF NOT EXISTS journal_entries (

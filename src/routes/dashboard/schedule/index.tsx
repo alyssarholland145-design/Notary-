@@ -14,6 +14,7 @@ interface Signing {
   completed_at: string | null;
   status: string;
   notes: string | null;
+  sharing_enabled: boolean;
   created_at: string;
 }
 
@@ -23,7 +24,7 @@ const getSignings = createServerFn({ method: "GET" }).handler(async (): Promise<
 
   const rows = await sql()`
     SELECT id, title, client_name, client_email, location,
-           scheduled_at, completed_at, status, notes, created_at
+           scheduled_at, completed_at, status, notes, sharing_enabled, created_at
     FROM signings
     WHERE user_id = ${user.id}
     ORDER BY
@@ -40,6 +41,7 @@ const getSignings = createServerFn({ method: "GET" }).handler(async (): Promise<
     completed_at: r.completed_at ? String(r.completed_at) : null,
     status: String(r.status),
     notes: r.notes ? String(r.notes) : null,
+    sharing_enabled: Boolean(r.sharing_enabled),
     created_at: String(r.created_at),
   }));
 });
@@ -156,7 +158,12 @@ function ScheduleListPage() {
                           {formatDateTime(s.scheduled_at)}
                         </p>
                       </div>
-                      <div className="shrink-0">{statusBadge(s.status)}</div>
+                      <div className="shrink-0 flex items-center gap-1.5">
+                        {s.sharing_enabled && (
+                          <span title="Shared with client" className="text-indigo-500 text-sm">🔗</span>
+                        )}
+                        {statusBadge(s.status)}
+                      </div>
                     </div>
                   </Link>
                 ))}
@@ -197,7 +204,12 @@ function ScheduleListPage() {
                           {formatDateTime(s.scheduled_at)}
                         </p>
                       </div>
-                      <div className="shrink-0">{statusBadge(s.status)}</div>
+                      <div className="shrink-0 flex items-center gap-1.5">
+                        {s.sharing_enabled && (
+                          <span title="Shared with client" className="text-indigo-500 text-sm">🔗</span>
+                        )}
+                        {statusBadge(s.status)}
+                      </div>
                     </div>
                   </Link>
                 ))}
