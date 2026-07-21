@@ -17,6 +17,7 @@ const getBusinessName = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const Route = createFileRoute("/")({
+  head: () => ({ title: "SignWell — Your Notary Business, Streamlined" }),
   loader: () => getBusinessName(),
   component: Home,
 });
@@ -46,8 +47,42 @@ function Home() {
         </div>
       </section>
 
-      {/* ---------- Features ---------- */}
+      {/* ---------- How It Works ---------- */}
       <section className="bg-gray-50 px-6 py-20">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              How it works
+            </h2>
+          </div>
+          <div className="mt-12 grid gap-8 sm:grid-cols-3">
+            <div className="text-center">
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 text-2xl" aria-hidden="true">1</span>
+              <h3 className="mt-4 text-xl font-semibold text-gray-900">Schedule</h3>
+              <p className="mt-2 text-gray-600">
+                Book appointments, set reminders, and keep your calendar organized — all from one dashboard.
+              </p>
+            </div>
+            <div className="text-center">
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 text-2xl" aria-hidden="true">2</span>
+              <h3 className="mt-4 text-xl font-semibold text-gray-900">Sign</h3>
+              <p className="mt-2 text-gray-600">
+                Manage documents, guide clients through signings, and log every notarization digitally.
+              </p>
+            </div>
+            <div className="text-center">
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 text-2xl" aria-hidden="true">3</span>
+              <h3 className="mt-4 text-xl font-semibold text-gray-900">Invoice</h3>
+              <p className="mt-2 text-gray-600">
+                Generate professional invoices instantly and track payments — get paid faster.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- Features ---------- */}
+      <section className="px-6 py-20">
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
@@ -57,7 +92,7 @@ function Home() {
           <div className="mt-12 grid gap-8 sm:grid-cols-2">
             {/* Card 1 */}
             <div className="rounded-xl bg-white p-8 shadow-sm ring-1 ring-gray-200">
-              <span className="text-3xl">📅</span>
+              <span className="text-3xl" aria-hidden="true">📅</span>
               <h3 className="mt-4 text-xl font-semibold text-gray-900">Smart Scheduling</h3>
               <p className="mt-2 text-gray-600">
                 Manage appointments, set reminders, and avoid double-bookings.
@@ -66,7 +101,7 @@ function Home() {
 
             {/* Card 2 */}
             <div className="rounded-xl bg-white p-8 shadow-sm ring-1 ring-gray-200">
-              <span className="text-3xl">📄</span>
+              <span className="text-3xl" aria-hidden="true">📄</span>
               <h3 className="mt-4 text-xl font-semibold text-gray-900">Document Management</h3>
               <p className="mt-2 text-gray-600">
                 Upload, preview, and organize signing documents securely.
@@ -75,7 +110,7 @@ function Home() {
 
             {/* Card 3 */}
             <div className="rounded-xl bg-white p-8 shadow-sm ring-1 ring-gray-200">
-              <span className="text-3xl">💰</span>
+              <span className="text-3xl" aria-hidden="true">💰</span>
               <h3 className="mt-4 text-xl font-semibold text-gray-900">Simple Invoicing</h3>
               <p className="mt-2 text-gray-600">
                 Generate invoices per signing and track payment status.
@@ -84,7 +119,7 @@ function Home() {
 
             {/* Card 4 */}
             <div className="rounded-xl bg-white p-8 shadow-sm ring-1 ring-gray-200">
-              <span className="text-3xl">📓</span>
+              <span className="text-3xl" aria-hidden="true">📓</span>
               <h3 className="mt-4 text-xl font-semibold text-gray-900">Digital Journal</h3>
               <p className="mt-2 text-gray-600">
                 Compliant notary journal with all required fields, always at your fingertips.
@@ -105,6 +140,37 @@ function Home() {
             handling high-volume real estate closings, or an in-office notary at a bank, law firm,
             UPS store, or government office — SignWell adapts to how you work.
           </p>
+        </div>
+      </section>
+
+      {/* ---------- Testimonials ---------- */}
+      <section className="px-6 py-20">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              Join hundreds of notaries who trust SignWell
+            </h2>
+          </div>
+          <div className="mt-12 grid gap-8 sm:grid-cols-3">
+            <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+              <blockquote className="text-gray-600 italic">
+                "SignWell has completely transformed how I manage my loan signings. The digital journal alone saves me hours every week."
+              </blockquote>
+              <p className="mt-4 text-sm font-semibold text-gray-900">— Maria G., Loan Signing Agent</p>
+            </div>
+            <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+              <blockquote className="text-gray-600 italic">
+                "I used to juggle three different tools. Now everything is in one place — scheduling, docs, and invoicing. Game changer."
+              </blockquote>
+              <p className="mt-4 text-sm font-semibold text-gray-900">— James T., Mobile Notary</p>
+            </div>
+            <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+              <blockquote className="text-gray-600 italic">
+                "As a bank notary, compliance is everything. SignWell's digital journal keeps me audit-ready at all times."
+              </blockquote>
+              <p className="mt-4 text-sm font-semibold text-gray-900">— Lisa R., Bank Notary</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -210,7 +276,12 @@ function Home() {
       <footer className="border-t border-gray-200 px-6 py-10">
         <div className="mx-auto max-w-6xl text-center">
           <p className="text-sm text-gray-500">© 2026 SignWell. All rights reserved.</p>
-          <p className="mt-1 text-sm text-gray-400">Built for notaries, by notaries.</p>
+          <div className="mt-2 flex items-center justify-center gap-4 text-sm text-gray-400">
+            <a href="/privacy" className="hover:text-indigo-600 transition-colors">Privacy Policy</a>
+            <span aria-hidden="true">|</span>
+            <a href="/terms" className="hover:text-indigo-600 transition-colors">Terms of Service</a>
+          </div>
+          <p className="mt-3 text-sm text-gray-400">Built for notaries, by notaries.</p>
         </div>
       </footer>
     </>

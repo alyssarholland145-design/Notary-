@@ -13,9 +13,29 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SignWell — Notary Business Management" },
+      { title: "SignWell — Notary Business Management Software" },
+      {
+        name: "description",
+        content:
+          "All-in-one platform for notaries and loan signing agents. Schedule signings, manage documents, track invoices, and keep a compliant digital journal.",
+      },
+      {
+        name: "keywords",
+        content:
+          "notary software, loan signing agent, notary journal, signing agent software, mobile notary, notary business management",
+      },
+      { property: "og:title", content: "SignWell — Notary Business Management Software" },
+      {
+        property: "og:description",
+        content:
+          "All-in-one platform for notaries and loan signing agents. Schedule signings, manage documents, track invoices, and keep a compliant digital journal.",
+      },
+      { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "canonical", href: "https://signwellagency.com" },
+    ],
   }),
   notFoundComponent: () => <div>Page not found</div>,
   component: RootComponent,

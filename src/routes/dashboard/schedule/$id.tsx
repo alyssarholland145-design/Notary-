@@ -322,7 +322,7 @@ function SigningDetailPage() {
 
   const handleCopyLink = () => {
     if (shareToken) {
-      const link = `https://site-13hs94uef-lyssa.vercel.app/s/${shareToken}`;
+      const link = `https://signwellagency.com/s/${shareToken}`;
       navigator.clipboard.writeText(link).then(() => {
         setCopyFeedback(true);
         setTimeout(() => setCopyFeedback(false), 2000);
@@ -807,7 +807,7 @@ function SigningDetailPage() {
                     <input
                       type="text"
                       readOnly
-                      value={`https://site-13hs94uef-lyssa.vercel.app/s/${shareToken}`}
+                      value={`https://signwellagency.com/s/${shareToken}`}
                       className="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700 focus:outline-none"
                     />
                     <button
