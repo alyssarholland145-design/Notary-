@@ -34,7 +34,7 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "canonical", href: "https://signwellagency.com" },
+      { rel: "canonical", href: "https://site-13hs94uef-lyssa.vercel.app" },
     ],
   }),
   notFoundComponent: () => <div>Page not found</div>,
